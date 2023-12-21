@@ -119,3 +119,6 @@ def get_athlete_urls_from_page(season, url):
         athlete_links.append(athlete_dict)
 
     return athlete_links
+
+def test_function ():
+    print("Hello World")

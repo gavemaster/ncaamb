@@ -120,5 +120,3 @@ def get_athlete_urls_from_page(season, url):
 
     return athlete_links
 
-def test_function ():
-    print("Hello World")

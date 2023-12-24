@@ -3,6 +3,13 @@ import collegebball.database as db
 import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import sys
+import time
+import threading
+import itertools
+# Spinner state
+_spinner_running = False
+_spinner_thread = None
 
 
 def get_team_events(team_event_link):
@@ -106,6 +113,7 @@ def get_event_urls_from_page(season, type, week, url):
 
     return event_links
 
+
 def get_athlete_urls_from_page(season, url):
     athlete_links = []
     data = fetch_data(url)
@@ -120,3 +128,26 @@ def get_athlete_urls_from_page(season, url):
 
     return athlete_links
 
+
+def _spinner_task():
+    spinner_cycle = itertools.cycle(["|", "/", "-", "\\"])
+    while _spinner_running:
+        sys.stdout.write(next(spinner_cycle))  # write the next character
+        sys.stdout.flush()  # flush stdout buffer (actual character display)
+        sys.stdout.write("\b")  # erase the last written char
+        time.sleep(0.1)  # wait for the next spin
+
+
+def start_spinner():
+    global _spinner_running
+    global _spinner_thread
+    _spinner_running = True
+    _spinner_thread = threading.Thread(target=_spinner_task)
+    _spinner_thread.start()
+
+
+def stop_spinner():
+    global _spinner_running
+    _spinner_running = False
+    if _spinner_thread:
+        _spinner_thread.join()

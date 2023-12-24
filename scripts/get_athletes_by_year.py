@@ -5,7 +5,9 @@ import collegebball.utils as utils
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from collegebball.spiders.athletes import AthletesSpider
+import datetime as dt
 
+start = dt.datetime.now()
 # take in a start year and end year as arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("start_year", type=int)
@@ -54,6 +56,21 @@ print("Number of athletes:", len(athletes))
 
 print("starting spider")
 
+
+utils.start_spinner()
+
 process = CrawlerProcess(get_project_settings())
 process.crawl(AthletesSpider, start_urls=athletes)
 process.start()
+
+utils.stop_spinner()
+
+# runtime in seconds
+end = dt.datetime.now()
+runtime = end - start
+print(f"runtime (seconds):  {runtime.total_seconds()}")
+runtime_minutes = runtime.total_seconds() / 60
+rounded_runtime = round(runtime_minutes, 1)
+print(f"runtime (minutes): {rounded_runtime}")
+
+print("done")

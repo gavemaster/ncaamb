@@ -48,6 +48,8 @@ ROBOTSTXT_OBEY = False
 #    "collegebball.middlewares.CollegebballSpiderMiddleware": 543,
 # }
 DUPEFILTER_CLASS = "scrapy.dupefilters.BaseDupeFilter"
+LOG_LEVEL = "ERROR"
+
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html

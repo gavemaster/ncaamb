@@ -77,7 +77,6 @@ athlete_details_reinsert_log_handler.setLevel(logging.INFO)
 athlete_details_reinsert_logger.addHandler(athlete_details_reinsert_log_handler)
 
 
-
 class MySQLStorePipeline(object):
     def __init__(self):
         self.dbpool = db.get_db_pool()
@@ -98,7 +97,7 @@ class MySQLStorePipeline(object):
             ):
                 college_query = self.dbpool.runInteraction(self._college_insert, item)
                 college_query.addErrback(self._handle_error, item)
-                self.success_logger.info(f"College successfully processed: {item} ")
+                college_query.addCallback(self._success, item)
             else:
                 self.error_logger.info(f"{item} has no college_espn_id")
                 raise DropItem(f"Missing college_espn_id in {item}")
@@ -107,19 +106,19 @@ class MySQLStorePipeline(object):
             success_logger.info(f"Processing team item")
             team_query = self.dbpool.runInteraction(self._team_insert, item)
             team_query.addErrback(self._handle_error, item)
-            self.success_logger.info(f"Team successfully processed: {item} ")
+            team_query.addCallback(self._success, item)
 
         elif isinstance(item, ConferenceItem):
             success_logger.info(f"Processing conference item")
             conf_query = self.dbpool.runInteraction(self._conference_insert, item)
             conf_query.addErrback(self._handle_error, item)
-            self.success_logger.info(f"Conference successfully processed: {item}")
+            conf_query.addCallback(self._success, item)
 
         elif isinstance(item, TeamOutcomesItem):
             success_logger.info(f"Processing team outcomes item")
             record_query = self.dbpool.runInteraction(self._record_insert, item)
             record_query.addErrback(self._handle_error, item)
-            self.success_logger.info(f"Team outcomes successfully processed: {item}")
+            record_query.addCallback(self._success, item)
 
         elif isinstance(item, ConferenceDetailsItem):
             success_logger.info(f"Processing conference details item")
@@ -127,15 +126,13 @@ class MySQLStorePipeline(object):
                 self._conference_details_insert, item
             )
             conf_details_query.addErrback(self._handle_error, item)
-            self.success_logger.info(
-                f"Conference details successfully processed: {item}"
-            )
+            conf_details_query.addCallback(self._success, item)
 
         elif isinstance(item, EventItem):
             success_logger.info(f"Processing event item")
             event_query = self.dbpool.runInteraction(self._event_insert, item)
             event_query.addErrback(self._handle_error, item)
-            self.success_logger.info(f"Event successfully processed: {item}")
+            event_query.addCallback(self._success, item)
 
         elif isinstance(item, EventDetailsItem):
             success_logger.info(f"Processing event details item")
@@ -143,19 +140,19 @@ class MySQLStorePipeline(object):
                 self._event_details_insert, item
             )
             event_details_query.addErrback(self._handle_error, item)
-            self.success_logger.info(f"Event details successfully processed: {item}")
+            event_details_query.addCallback(self._success, item)
 
         elif isinstance(item, VenueItem):
             success_logger.info(f"Processing venue item")
             venue_query = self.dbpool.runInteraction(self._venue_insert, item)
             venue_query.addErrback(self._handle_error, item)
-            self.success_logger.info(f"Venue successfully processed: {item}")
+            venue_query.addCallback(self._success, item)
 
         elif isinstance(item, AthleteItem):
             success_logger.info(f"Processing athlete item")
             athlete_query = self.dbpool.runInteraction(self._athlete_insert, item)
             athlete_query.addErrback(self._handle_error, item)
-            self.success_logger.info(f"Athlete successfully processed: {item}")
+            athlete_query.addCallback(self._success, item)
 
         elif isinstance(item, AthleteDetailsItem):
             success_logger.info(f"Processing athlete details item")
@@ -163,7 +160,7 @@ class MySQLStorePipeline(object):
                 self._athlete_details_insert, item
             )
             athleteDetails_query.addErrback(self._handle_error, item)
-            self.success_logger.info(f"athlete details successfully processed: {item}")
+            athleteDetails_query.addCallback(self._success, item)
         return item
 
     def _college_insert(self, tx, item):
@@ -361,6 +358,7 @@ class MySQLStorePipeline(object):
             item["athlete_ref"],
             last_updated,
         )
+
         tx.execute(sql, args)
 
     def _athlete_details_insert(self, tx, item):
@@ -379,6 +377,7 @@ class MySQLStorePipeline(object):
             item["status"],
             last_updated,
         )
+
         tx.execute(sql, args)
 
     def _athlete_team_insert(self, tx, item, sql):
@@ -387,6 +386,10 @@ class MySQLStorePipeline(object):
             item["team_id"],
         )
         tx.execute(sql, args)
+
+    def _success(self, result, item):
+        item_type = type(item).__name__
+        success_logger.info(f"{item_type} successfully processed: {item}")
 
     def _handle_error(self, failure, item):
         exception = failure.value
@@ -440,17 +443,23 @@ class MySQLStorePipeline(object):
                     team_item["team_events_ref"] = None
 
                 self._handle_missing_college(team_item, item)
-            elif exception.args[0] in (1451, 1452) and isinstance(item, AthleteDetailsItem):
+            elif exception.args[0] in (1451, 1452) and isinstance(
+                item, AthleteDetailsItem
+            ):
                 if "team_id" in str(exception):
                     self.athlete_details_reinsert_logger.info(
                         f"Handling missing team.... "
                         + str(
                             item["athlete_id"]
                             + ":  with id: "
-                            + str(item["team_id"]) + " and season: " + str(item["season"])
+                            + str(item["team_id"])
+                            + " and season: "
+                            + str(item["season"])
                         )
                     )
                     self._handle_missing_athlete_team(item)
+                else:
+                    raise DropItem(f"Error processing item: {failure} item: {item}")
             else:
                 raise DropItem(f"Error processing item: {failure} item: {item}")
         else:
@@ -513,7 +522,7 @@ class MySQLStorePipeline(object):
             f"Event successfully processed after adding missing team: {event_item} "
         )
 
-    def _handle_missing_athlete_team(self, result, item):
+    def _handle_missing_athlete_team(self, item):
         sql = """
                 INSERT INTO teams (espn_id, location, name, season)
                 SELECT espn_id, location, name, %s

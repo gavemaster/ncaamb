@@ -220,8 +220,6 @@ ATHLETE_DETAILS_UPSERT_QUERY = """
 """
 
 
-
-
 def get_db_pool():
     """Get a connection to the database"""
     return adbapi.ConnectionPool(

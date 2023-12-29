@@ -218,6 +218,16 @@ ATHLETE_DETAILS_UPSERT_QUERY = """
                                 last_updated = VALUES(last_updated);
 
 """
+ROSTER_UPSERT_QUERY = """
+        INSERT INTO event_rosters (team_id, athlete_id, season, event_id, did_not_play, stats_ref, starter, ejected, last_updated)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                                did_not_play = VALUES(did_not_play),
+                                stats_ref = VALUES(stats_ref),
+                                starter = VALUES(starter),
+                                ejected = VALUES(ejected),
+                                last_updated = VALUES(last_updated);
+"""
 
 
 def get_db_pool():
@@ -467,6 +477,38 @@ def get_athlete_landing_pages(start, end):
                 {
                     "season": result[0],
                     "athletes_ref": result[1],
+                }
+            )
+        return results_list
+    except MySQLdb.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_event_rosters(start, end):
+    conn = get_connection()
+    cursor = conn.cursor()
+    results_list = []
+    try:
+        cursor.execute(
+            """SELECT a.home_team_college_id, a.away_team_college_id, b.home_team_roster_ref, b.away_team_roster_ref, a.season, a.event_id FROM events a LEFT JOIN event_details b on a.event_id = b.event_id
+                WHERE (b.home_team_roster_ref is not null and b.away_team_roster_ref is not NULL) and a.season BETWEEN %s AND %s""",
+            (start, end),
+        )
+        results = cursor.fetchall()
+        # make results a list of dicts
+        for result in results:
+            results_list.append(
+                {
+                    "home_team": result[0],
+                    "away_team": result[1],
+                    "home_team_roster_url": result[2],
+                    "away_team_roster_url": result[3],
+                    "season": result[4],
+                    "event_id": result[5],
                 }
             )
         return results_list

@@ -182,3 +182,15 @@ class AthleteDetailsItem(scrapy.Item):
     height = scrapy.Field()
     weight = scrapy.Field()
     status = scrapy.Field()
+
+
+class RosterItem(scrapy.Item):
+    athlete_id = scrapy.Field()
+    team_id = scrapy.Field()
+    season = scrapy.Field()
+    starter = scrapy.Field()
+    did_not_play = scrapy.Field()
+    ejected = scrapy.Field()
+    event_id = scrapy.Field()
+    stats_ref = scrapy.Field()
+    athlete_ref = scrapy.Field()

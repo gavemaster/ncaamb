@@ -1,5 +1,9 @@
 {
     "python.analysis.extraPaths": [
         "./collegebball"
-    ]
+    ],
+    "[python]": {
+        "editor.defaultFormatter": "GitHub.copilot"
+    },
+    "workbench.editor.enablePreview": false
 }

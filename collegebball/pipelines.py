@@ -19,6 +19,8 @@ from collegebball.items import (
     AthleteItem,
     AthleteDetailsItem,
     RosterItem,
+    PlayerStatsItem,
+    BookieItem
 )
 import collegebball.database as db
 from dotenv import load_dotenv
@@ -152,6 +154,19 @@ class MySQLStorePipeline(object):
             roster_query = self.dbpool.runInteraction(self._roster_insert, item)
             roster_query.addErrback(self._handle_error, item)
             roster_query.addCallback(self._success, item)
+
+        elif isinstance(item, PlayerStatsItem):
+            success_logger.info(f"Processing player stats item")
+            player_stats_query = self.dbpool.runInteraction(self._player_stats_insert, item)
+            player_stats_query.addErrback(self._handle_error, item)
+            player_stats_query.addCallback(self._success, item)
+        
+        elif isinstance(item, BookieItem):
+            success_logger.info(f"Processing bookie item")
+            bookie_query = self.dbpool.runInteraction(self._bookie_insert, item)
+            bookie_query.addErrback(self._handle_error, item)
+            bookie_query.addCallback(self._success, item)
+
         return item
 
     def _college_insert(self, tx, item):
@@ -391,6 +406,70 @@ class MySQLStorePipeline(object):
             item["starter"],
             item["ejected"],
             last_updated,
+        )
+        tx.execute(sql, args)
+
+    def _player_stats_insert(self, tx, item):
+        last_updated = datetime.datetime.now()
+        sql = db.PLAYER_STATS_UPSERT_QUERY
+        args = (
+            item["athlete_id"],
+            item["team_id"],
+            item["season"],
+            item["event_id"],
+            item["blocks"],
+            item["def_rebounds"],
+            item["steals"],
+            item["points_off_turnovers"],
+            item["flagrant_fouls"],
+            item["fouls"],
+            item["ejections"],
+            item["technical_fouls"],
+            item["tot_rebounds"],
+            item["total_minutes"],
+            item["fantasy_rating"],
+            item["plus_minus"],
+            item["assist_turnover_ratio"],
+            item["steal_foul_ratio"],
+            item["blocks_foul_ratio"],
+            item["steal_turnover_ratio"],
+            item["games_played"],
+            item["games_started"],
+            item["double_double"],
+            item["triple_double"],
+            item["assists"],
+            item["fgs_attempted"],
+            item["fgs_made"],
+            item["fgs_pct"],
+            item["fts_attempted"],
+            item["fts_made"],
+            item["fts_pct"],
+            item["off_rebounds"],
+            item["points"],
+            item["turnovers"],
+            item["three_fgs_attempted"],
+            item["three_fgs_made"],
+            item["three_fgs_pct"],
+            item["second_chance_points"],
+            item["fast_break_points"],
+            item["off_rebounds_pct"],
+            item["two_fgs_attempted"],
+            item["two_fgs_made"],
+            item["two_fgs_pct"],
+            item["shooting_efficiency"],
+            item["scoring_efficiency"],
+            last_updated,
+            
+        )
+        tx.execute(sql, args)
+
+    def _bookie_insert(self, tx, item):
+        sql = db.BOOKIE_UPSERT_QUERY
+        args = (
+                item["id"],
+                item["name"],
+                item["bookie_ref"],
+                item["priority"]
         )
         tx.execute(sql, args)
 

@@ -230,6 +230,73 @@ ROSTER_UPSERT_QUERY = """
 """
 
 
+PLAYER_STATS_UPSERT_QUERY = """
+    INSERT INTO player_stats (athlete_id, team_id, season, event_id, blks, dreb, stls, points_off_turnovers, flagrant_fouls, fouls, ejections, tech_fouls, tot_reb, minutes, fantasy_rating, plus_minus,
+													ast_to_ratio, stl_foul_ratio, blk_foul_ratio, stl_to_ratio, games_played, games_started, double_double, triple_double, ast, fga, fgm, fg_pct, fta, ftm, ft_pct, oreb,
+													pts, turnovers, 3fga, 3fgm, 3fg_pct, second_chance_pts, fast_break_pts, oreb_pct, 2fga, 2fgm, 2fg_pct, shooting_eff, scoring_eff, last_updated)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+								%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+								%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+								%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+								%s, %s, %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                                blks = VALUES(blks),
+                                dreb = VALUES(dreb),
+                                stls = VALUES(stls),
+                                points_off_turnovers = VALUES(points_off_turnovers),
+                                flagrant_fouls = VALUES(flagrant_fouls),
+                                fouls = VALUES(fouls),
+                                ejections = VALUES(ejections),
+                                tech_fouls = VALUES(tech_fouls),
+                                tot_reb = VALUES(tot_reb),
+                                minutes = VALUES(minutes),
+                                fantasy_rating = VALUES(fantasy_rating),
+                                plus_minus = VALUES(plus_minus),
+                                ast_to_ratio = VALUES(ast_to_ratio),
+                                stl_foul_ratio = VALUES(stl_foul_ratio),
+                                blk_foul_ratio = VALUES(blk_foul_ratio),
+                                stl_to_ratio = VALUES(stl_to_ratio),
+                                games_played = VALUES(games_played),
+                                games_started = VALUES(games_started),
+                                double_double = VALUES(double_double),
+                                triple_double = VALUES(triple_double),
+                                ast = VALUES(ast),
+                                fga = VALUES(fga),
+                                fgm = VALUES(fgm),
+                                fg_pct = VALUES(fg_pct),
+                                fta = VALUES(fta),
+                                ftm = VALUES(ftm),
+                                ft_pct = VALUES(ft_pct),
+                                oreb = VALUES(oreb),
+                                pts = VALUES(pts),
+                                turnovers = VALUES(turnovers),
+                                3fga = VALUES(3fga),
+                                3fgm = VALUES(3fgm),
+                                3fg_pct = VALUES(3fg_pct),
+                                second_chance_pts = VALUES(second_chance_pts),
+                                fast_break_pts = VALUES(fast_break_pts),
+                                oreb_pct = VALUES(oreb_pct),
+                                2fga = VALUES(2fga),
+                                2fgm = VALUES(2fgm),
+                                2fg_pct = VALUES(2fg_pct),
+                                shooting_eff = VALUES(shooting_eff),
+                                scoring_eff = VALUES(scoring_eff),
+                                last_updated = VALUES(last_updated);
+                                
+"""
+
+BOOKIE_UPSERT_QUERY = """
+                        INSERT INTO odd_providers(id, name, ref, priority)
+                        VALUES (%s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                                name = VALUES(name),
+                                ref = VALUES(ref),
+                                priority = VALUES(priority);
+"""
+
+
+
+
 def get_db_pool():
     """Get a connection to the database"""
     return adbapi.ConnectionPool(
@@ -509,6 +576,36 @@ def get_event_rosters(start, end):
                     "away_team_roster_url": result[3],
                     "season": result[4],
                     "event_id": result[5],
+                }
+            )
+        return results_list
+    except MySQLdb.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_player_stats_ref(start, end):
+    conn = get_connection()
+    cursor = conn.cursor()
+    results_list = []
+    try:
+        cursor.execute(
+            """SELECT team_id, athlete_id, event_id, season, stats_ref FROM event_rosters where did_not_play = 0 and season BETWEEN %s and %s""",
+            (start, end),
+        )
+        results = cursor.fetchall()
+        # make results a list of dicts
+        for result in results:
+            results_list.append(
+                {
+                    "team_id": result[0],
+                    "athlete_id": result[1],
+                    "event_id": result[2],
+                    "season": result[3],
+                    "stats_ref": result[4],
                 }
             )
         return results_list

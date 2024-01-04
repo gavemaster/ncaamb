@@ -18,3 +18,5 @@ collegebball/spiders/__pycache__/seasons.cpython-310.pyc
 collegebball/spiders/__pycache__/team_spider.cpython-310.pyc
 scripts/__pycache__/__init__.cpython-310.pyc
 athlete_details_reinsert.log
+collegebball/spiders/__pycache__/player_stats.cpython-310.pyc
+collegebball/spiders/__pycache__/bookies.cpython-310.pyc

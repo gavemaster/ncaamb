@@ -127,7 +127,28 @@ def get_athlete_urls_from_page(season, url):
         athlete_links.append(athlete_dict)
 
     return athlete_links
+def get_urls_from_page(url):
+    _links = []
+    _data = fetch_data(url)
+    if not _data:
+        return []
+    _items = _data["items"]
+    for _item in _items:
+        _link = _item["$ref"]
+        _links.append(_link)
+    return _links
 
+def get_links_from_multiple_pages(url):
+    _data = fetch_data(url)
+    if not _data:
+        return []
+    page_count = _data["pageCount"]
+    _links = []
+    for i in range(1, page_count + 1):
+        _url = url + "?&page=" + str(i)
+        links = get_urls_from_page(_url)
+        _links.extend(links)
+    return _links
 
 def _spinner_task():
     spinner_cycle = itertools.cycle(["|", "/", "-", "\\"])

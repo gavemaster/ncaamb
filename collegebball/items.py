@@ -14,17 +14,20 @@ class TeamItem(scrapy.Item):
     team_abbr = scrapy.Field()
     season = scrapy.Field()
     team_events_ref = scrapy.Field()
+    conference_ref = scrapy.Field()
+    record_ref = scrapy.Field()
+    ranks_ref = scrapy.Field()
+    ats_ref = scrapy.Field()
+
 
 
 class ConferenceItem(scrapy.Item):
     name = scrapy.Field()
     conference_id = scrapy.Field()
-
-
-class CollegeItem(scrapy.Item):
-    team_name = scrapy.Field()
-    college_espn_id = scrapy.Field()
-    team_location = scrapy.Field()
+    short_name = scrapy.Field()
+    conference_standings_ref = scrapy.Field()
+    conference_teams_ref = scrapy.Field()
+    season = scrapy.Field()
 
 
 class TeamOutcomesItem(scrapy.Item):
@@ -105,13 +108,7 @@ class TeamOutcomesItem(scrapy.Item):
     last_updated = scrapy.Field()
 
 
-class ConferenceDetailsItem(scrapy.Item):
-    name = scrapy.Field()
-    short_name = scrapy.Field()
-    conference_id = scrapy.Field()
-    conference_standings_ref = scrapy.Field()
-    conference_teams_ref = scrapy.Field()
-    season = scrapy.Field()
+
 
 
 class EventItem(scrapy.Item):
@@ -249,3 +246,99 @@ class BookieItem(scrapy.Item):
     name = scrapy.Field()
     priority = scrapy.Field()
     bookie_ref = scrapy.Field()
+
+class EventOddsItem(scrapy.Item):
+    event_id = scrapy.Field()
+    provider_id = scrapy.Field()
+    home_team_id = scrapy.Field()
+    away_team_id = scrapy.Field()
+    home_team_moneyline = scrapy.Field()
+    away_team_moneyline = scrapy.Field()
+    home_team_spread = scrapy.Field()
+    away_team_spread = scrapy.Field()
+    home_team_spread_odds = scrapy.Field()
+    away_team_spread_odds = scrapy.Field()
+    over_under = scrapy.Field()
+    over_odds = scrapy.Field()
+    under_odds = scrapy.Field()
+    spread_history_ref = scrapy.Field()
+    total_history_ref = scrapy.Field()
+    moneyline_history_ref = scrapy.Field()
+    
+class SpreadHistoryItem(scrapy.Item):
+    away_team_spread_odds_low = scrapy.Field()
+    away_team_spread_odds_high = scrapy.Field()
+    away_team_spread_odds_open = scrapy.Field()
+    away_team_spread_odds_current = scrapy.Field()
+    away_team_spread_odds_prev = scrapy.Field()
+    home_team_spread_odds_low = scrapy.Field()
+    home_team_spread_odds_high = scrapy.Field()
+    home_team_spread_odds_open = scrapy.Field()
+    home_team_spread_odds_current = scrapy.Field()
+    home_team_spread_odds_prev = scrapy.Field()
+    event_id = scrapy.Field()
+    provider_id = scrapy.Field()
+    away_team_id = scrapy.Field()
+    home_team_id = scrapy.Field()
+    movement_ref = scrapy.Field()
+
+    
+
+class TotalHistoryItem(scrapy.Item):
+    total_low = scrapy.Field()
+    total_high = scrapy.Field()
+    total_open = scrapy.Field()
+    total_current = scrapy.Field()
+    total_prev = scrapy.Field()
+    event_id = scrapy.Field()
+    provider_id = scrapy.Field()
+    away_team_id = scrapy.Field()
+    home_team_id = scrapy.Field()
+    movement_ref = scrapy.Field()
+
+class MoneyLineHistoryItem(scrapy.Item):
+    away_team_low = scrapy.Field()
+    away_team_high = scrapy.Field()
+    away_team_open = scrapy.Field()
+    away_team_current = scrapy.Field()
+    away_team_prev = scrapy.Field()
+    home_team_low = scrapy.Field()
+    home_team_high = scrapy.Field()
+    home_team_open = scrapy.Field()
+    home_team_current = scrapy.Field()
+    home_team_prev = scrapy.Field()
+    event_id = scrapy.Field()
+    provider_id = scrapy.Field()
+    away_team_id = scrapy.Field()
+    home_team_id = scrapy.Field()
+    movement_ref = scrapy.Field()
+    
+class SpreadMovementItem(scrapy.Item):
+    away_odds = scrapy.Field()
+    home_odds = scrapy.Field()
+    event_id = scrapy.Field()
+    provider_id = scrapy.Field()
+    away_team_id = scrapy.Field()
+    home_team_id = scrapy.Field()
+    timestamp = scrapy.Field()
+    line = scrapy.Field()
+
+class TotalMovementItem(scrapy.Item):
+    under_odds = scrapy.Field()
+    over_odds = scrapy.Field()
+    event_id = scrapy.Field()
+    provider_id = scrapy.Field()
+    away_team_id = scrapy.Field()
+    home_team_id = scrapy.Field()
+    timestamp = scrapy.Field()
+    line = scrapy.Field()
+
+class MoneyLineMovementItem(scrapy.Item):
+    away_odds = scrapy.Field()
+    home_odds = scrapy.Field()
+    event_id = scrapy.Field()
+    provider_id = scrapy.Field()
+    away_team_id = scrapy.Field()
+    home_team_id = scrapy.Field()
+    timestamp = scrapy.Field()
+

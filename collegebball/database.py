@@ -8,15 +8,22 @@ load_dotenv()
 COLLEGE_INSERT_QUERY = """INSERT IGNORE INTO colleges (espn_id, name, location)
                     VALUES (%s, %s, %s) """
 
-TEAM_UPSERT_QUERY = """INSERT INTO teams (name, espn_id, location, conference, team_abbr, season, events_link)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+TEAM_UPSERT_QUERY = """INSERT INTO teams (name, espn_id, location, conference, team_abbr, season, events_link, conference_link, record_link, 
+                                            ats_link, ranks_link)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
+                            %s, %s)
                     ON DUPLICATE KEY UPDATE
                     name = VALUES(name),
                     location = VALUES(location),
                     conference = VALUES(conference),
                     team_abbr = VALUES(team_abbr),
-                    events_link = VALUES(events_link);
-"""
+                    events_link = VALUES(events_link),
+                    conference_link = VALUES(conference_link),
+                    record_link = VALUES(record_link),
+                    ats_link = VALUES(ats_link),
+                    ranks_link = VALUES(ranks_link);
+                    """
+
 TEAM_RESULTS_UPSERT_QUERY = """
         INSERT INTO team_results (team_espn_id, season, ats_overall_wins, ats_overall_losses, ats_overall_pushes, ats_favorite_wins, ats_favorite_losses, ats_favorite_pushes, ats_underdog_wins, 
                                     ats_underdog_losses, ats_underdog_pushes, ats_away_wins, ats_away_losses, ats_away_pushes, ats_home_wins, ats_home_losses, ats_home_pushes, ats_away_favorite_wins, 
@@ -295,7 +302,120 @@ BOOKIE_UPSERT_QUERY = """
 """
 
 
+EVENT_ODDS_UPSERT_QUERY = """
+                        INSERT INTO event_odds(event_id, provider_id, home_team_id, away_team_id, home_team_moneyline, away_team_moneyline,
+                                        home_team_spread, away_team_spread, home_team_spread_odds, away_team_spread_odds, total_line, over_odds,
+                                        under_odds, spread_details_ref, total_details_ref, moneyline_details_ref, last_updated)
+                        VALUES (%s, %s, %s, %s, %s, %s,
+                                %s, %s, %s, %s, %s, %s,
+                                %s, %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                                home_team_moneyline = VALUES(home_team_moneyline),
+                                away_team_moneyline = VALUES(away_team_moneyline),
+                                home_team_spread = VALUES(home_team_spread),
+                                away_team_spread = VALUES(away_team_spread),
+                                home_team_spread_odds = VALUES(home_team_spread_odds),
+                                away_team_spread_odds = VALUES(away_team_spread_odds),
+                                total_line = VALUES(total_line),
+                                over_odds = VALUES(over_odds),
+                                under_odds = VALUES(under_odds),
+                                spread_details_ref = VALUES(spread_details_ref),
+                                total_details_ref = VALUES(total_details_ref),
+                                moneyline_details_ref = VALUES(moneyline_details_ref),
+                                last_updated = VALUES(last_updated);
+"""
 
+
+EVENT_SPREAD_DETAILS_UPSERT_QUERY = """
+                        INSERT INTO spread_odds_details(event_id, provider_id, home_team_id, away_team_id, home_team_spread_odds_low,
+                                        home_team_spread_odds_high, home_team_spread_odds_open, home_team_spread_odds_current,
+                                        home_team_spread_odds_previous, away_team_spread_odds_low, away_team_spread_odds_high,
+                                        away_team_spread_odds_open, away_team_spread_odds_current, away_team_spread_odds_previous,
+                                        movement_ref, last_updated)
+                        VALUES (%s, %s, %s, %s, %s, %s,
+                                %s, %s, %s, %s, %s, %s,
+                                %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                                home_team_spread_odds_low = VALUES(home_team_spread_odds_low),
+                                home_team_spread_odds_high = VALUES(home_team_spread_odds_high),
+                                home_team_spread_odds_open = VALUES(home_team_spread_odds_open),
+                                home_team_spread_odds_current = VALUES(home_team_spread_odds_current),
+                                home_team_spread_odds_previous = VALUES(home_team_spread_odds_previous),
+                                away_team_spread_odds_low = VALUES(away_team_spread_odds_low),
+                                away_team_spread_odds_high = VALUES(away_team_spread_odds_high),
+                                away_team_spread_odds_open = VALUES(away_team_spread_odds_open),
+                                away_team_spread_odds_current = VALUES(away_team_spread_odds_current),
+                                away_team_spread_odds_previous = VALUES(away_team_spread_odds_previous),
+                                movement_ref = VALUES(movement_ref),
+                                last_updated = VALUES(last_updated);
+"""
+
+EVENT_SPREAD_MOVEMENT_UPSERT_QUERY = """
+                        INSERT INTO spread_lines(event_id, provider_id, home_team_id, away_team_id, home_team_odds, away_team_odds,
+                                        line, timstamp)
+                        VALUES (%s, %s, %s, %s, %s, %s, 
+                                %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                                home_team_odds = VALUES(home_team_odds),
+                                away_team_odds = VALUES(away_team_odds),
+                                line = VALUES(line);
+"""
+
+EVENT_TOTAL_DETAILS_UPSERT_QUERY = """
+                        INSERT INTO total_odds_details(event_id, provider_id, home_team_id, away_team_id, total_line_low, total_line_high, 
+                                        total_line_open, total_line_current, total_line_previous, movement_ref, last_updated)
+                        VALUES (%s, %s, %s, %s, %s, %s,
+                                %s, %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                                total_line_low = VALUES(total_line_low),
+                                total_line_high = VALUES(total_line_high),
+                                total_line_open = VALUES(total_line_open),
+                                total_line_current = VALUES(total_line_current),
+                                total_line_previous = VALUES(total_line_previous),
+                                movement_ref = VALUES(movement_ref),
+                                last_updated = VALUES(last_updated);
+"""
+
+EVENT_TOTAL_MOVEMENT_UPSERT_QUERY = """
+                        INSERT INTO total_lines(event_id, provider_id, home_team_id, away_team_id, over_odds, under_odds, line, timestamp)
+                        VALUES (%s, %s, %s, %s, %s, %s,
+                                %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                                over_odds = VALUES(over_odds),
+                                under_odds = VALUES(under_odds),
+                                line = VALUES(line);
+"""
+
+EVENT_MONEYLINE_DETAILS_UPSERT_QUERY = """
+                        INSERT INTO moneyline_odds_details(event_id, provider_id, home_team_id, away_team_id, home_team_low,
+                                        home_team_high, home_team_open, home_team_current, home_team_previous, away_team_low,
+                                        away_team_high, away_team_open, away_team_current, away_team_previous, movement_ref, last_updated)
+                        VALUES (%s, %s, %s, %s, %s, %s,
+                                %s, %s, %s, %s, %s, %s,
+                                %s, %s, %s, %s)
+                        ON DUPLICATE KEY UPDATE
+                                home_team_low = VALUES(home_team_low),
+                                home_team_high = VALUES(home_team_high),
+                                home_team_open = VALUES(home_team_open),
+                                home_team_current = VALUES(home_team_current),
+                                home_team_previous = VALUES(home_team_previous),
+                                away_team_low = VALUES(away_team_low),
+                                away_team_high = VALUES(away_team_high),
+                                away_team_open = VALUES(away_team_open),
+                                away_team_current = VALUES(away_team_current),
+                                away_team_previous = VALUES(away_team_previous),
+                                movement_ref = VALUES(movement_ref),
+                                last_updated = VALUES(last_updated);
+"""
+
+EVENT_MONEYLINE_MOVEMENT_UPSERT_QUERY = """
+                        INSERT INTO moneyline_lines(event_id, provider_id, home_team_id, away_team_id, home_team_odds, away_team_odds, timestamp)
+                        VALUES (%s, %s, %s, %s, %s, %s,
+                                %s)
+                        ON DUPLICATE KEY UPDATE
+                                home_team_odds = VALUES(home_team_odds),
+                                away_team_odds = VALUES(away_team_odds);
+""" 
 
 def get_db_pool():
     """Get a connection to the database"""
@@ -606,6 +726,106 @@ def get_player_stats_ref(start, end):
                     "event_id": result[2],
                     "season": result[3],
                     "stats_ref": result[4],
+                }
+            )
+        return results_list
+    except MySQLdb.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_event_odds(start, end):
+    conn = get_connection()
+    cursor = conn.cursor()
+    results_list = []
+    try:
+        cursor.execute(
+            """SELECT a.event_id, b.odds_ref, a.home_team_college_id, a.away_team_college_id, a.season FROM events a LEFT JOIN event_details b on a.event_id = b.event_id
+                WHERE b.odds_ref is not null and a.date BETWEEN %s AND %s""",
+            (start, end),
+        )
+        results = cursor.fetchall()
+        # make results a list of dicts
+        for result in results:
+            results_list.append(
+                {
+                    "event_id": result[0],
+                    "odds_ref": result[1],
+                    "home_team": result[2],
+                    "away_team": result[3],
+                    "season": result[4],
+                }
+            )
+        return results_list
+    except MySQLdb.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+def check_if_team_exists(team_id, season):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT espn_id FROM teams WHERE espn_id = %s AND season = %s",
+            (team_id, season),
+        )
+        result = cursor.fetchone()
+        if result is None:
+            return False
+        else:
+            return True
+    except MySQLdb.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_event_date_range():
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT MIN(date), MAX(date) FROM events"
+        )
+        result = cursor.fetchone()
+        min_date = result[0]
+        max_date = result[1]
+        return min_date, max_date
+    except MySQLdb.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_team_ats_link_and_record_link_from_db(start, end):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT espn_id, season, ats_link, record_link FROM teams WHERE (season BETWEEN %s AND %s) AND ats_link IS NOT NULL AND record_link IS NOT NULL",
+            (start, end),
+        )
+        results = cursor.fetchall()
+        # make results a list of dicts
+        results_list = []
+        for result in results:
+            results_list.append(
+                {
+                    "team_id": result[0],
+                    "season": result[1],
+                    "ats_link": result[2],
+                    "record_link": result[3],
                 }
             )
         return results_list

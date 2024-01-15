@@ -47,7 +47,7 @@ ROBOTSTXT_OBEY = False
 # SPIDER_MIDDLEWARES = {
 #    "collegebball.middlewares.CollegebballSpiderMiddleware": 543,
 # }
-DUPEFILTER_CLASS = "scrapy.dupefilters.BaseDupeFilter"
+#DUPEFILTER_CLASS = "scrapy.dupefilters.BaseDupeFilter"
 LOG_LEVEL = "ERROR"
 
 

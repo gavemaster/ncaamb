@@ -7,6 +7,7 @@ import sys
 import time
 import threading
 import itertools
+import re
 # Spinner state
 _spinner_running = False
 _spinner_thread = None
@@ -78,6 +79,14 @@ def get_first_year_from_string(string):
     return string.split("-")[0]
 
 
+def extract_year_from_url(url):
+    # Use a regular expression to find a four-digit number in the URL
+    match = re.search(r'/seasons/(\d{4})/', url)
+    if match:
+        return match.group(1)
+    else:
+        return "Year not found in URL"
+
 def extract_season_and_type(url):
     # Split the URL into parts
     parts = url.split("/")
@@ -113,6 +122,26 @@ def get_event_urls_from_page(season, type, week, url):
 
     return event_links
 
+def get_conference_urls_from_page(url):
+    conference_links = []
+    data = fetch_data(url)
+    if not data:
+        return None
+    conferences = data["items"]
+    for conference in conferences:
+        conference_links.append(conference["$ref"])
+
+    return conference_links
+def get_team_urls_from_page(url):
+    team_links = []
+    data = fetch_data(url)
+    if not data:
+        return None
+    teams = data["items"]
+    for team in teams:
+        team_links.append(team["$ref"])
+
+    return team_links
 
 def get_athlete_urls_from_page(season, url):
     athlete_links = []
@@ -172,3 +201,32 @@ def stop_spinner():
     _spinner_running = False
     if _spinner_thread:
         _spinner_thread.join()
+
+
+def check_date_format(input_date):
+    # Try to parse the date in the 'YYYY-MM-DD' format
+    try:
+        datetime.strptime(input_date, "%Y-%m-%d")
+        return True  # The date is in the correct format
+    except ValueError:
+        # The date is not in the correct format
+        return False
+
+
+def extract_id_from_url(url):
+    """
+    Extracts the ID number from the given URL.
+
+    Args:
+    url (str): The URL from which to extract the ID.
+
+    Returns:
+    int: The extracted ID number, or None if no ID is found.
+    """
+    # Regular expression to match the ID pattern in the URL
+    match = re.search(r'/groups/(\d+)', url)
+    
+    if match:
+        return int(match.group(1))
+    else:
+        return None

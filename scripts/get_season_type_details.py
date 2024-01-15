@@ -5,8 +5,23 @@ import collegebball.database as db
 import collegebball.utils as utils
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import argparse
 
-urls = db.get_season_links_from_db(2001, 2024)
+parser = argparse.ArgumentParser()
+parser.add_argument("start_year", type=int)
+parser.add_argument("end_year", type=int)
+args = parser.parse_args()
+
+
+if args.start_year > args.end_year:
+    raise ValueError("Start year must be less than or equal to end year")
+elif args.start_year < 2002:
+    raise ValueError("Start year must be greater than or equal to 2002")
+elif args.end_year > 2024:
+    raise ValueError("End year must be less than or equal to 2024")
+
+
+urls = db.get_season_links_from_db(args.start_year, args.end_year)
 
 
 

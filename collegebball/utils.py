@@ -143,7 +143,7 @@ def get_team_urls_from_page(url):
 
     return team_links
 
-def get_athlete_urls_from_page(season, url):
+def get_athlete_urls_from_page(url):
     athlete_links = []
     data = fetch_data(url)
     if not data:
@@ -151,7 +151,6 @@ def get_athlete_urls_from_page(season, url):
     athletes = data["items"]
     for athlete in athletes:
         athlete_dict = {}
-        athlete_dict["season"] = season
         athlete_dict["athlete_ref"] = athlete["$ref"]
         athlete_links.append(athlete_dict)
 

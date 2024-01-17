@@ -23,7 +23,6 @@ from collegebball.items import (
     TotalMovementItem,
     VenueItem,
     AthleteItem,
-    AthleteDetailsItem,
     RosterItem,
     PlayerStatsItem,
     BookieItem
@@ -102,9 +101,15 @@ class MySQLStorePipeline(object):
 
         elif isinstance(item, EventItem):
             success_logger.info(f"Processing event item")
-            event_query = self.dbpool.runInteraction(self._event_insert, item)
-            event_query.addErrback(self._handle_error, item)
-            event_query.addCallback(self._success, item)
+
+            if item["venue_id"] is None:
+                event_query = self.dbpool.runInteraction(self._event_insert, item)
+                event_query.addErrback(self._handle_error, item)
+                event_query.addCallback(self._event_success, item)
+            else:
+                event_query = self.dbpool.runInteraction(self._venue_insert, item)
+                event_query.addErrback(self._handle_error, item)
+                event_query.addCallback(self._venue_success, item)
 
         elif isinstance(item, EventDetailsItem):
             success_logger.info(f"Processing event details item")
@@ -123,12 +128,6 @@ class MySQLStorePipeline(object):
             athlete_query = self.dbpool.runInteraction(self._athlete_insert, item)
             athlete_query.addErrback(self._handle_error, item)
             athlete_query.addCallback(self._success, item)
-
-        elif isinstance(item, AthleteDetailsItem):
-            success_logger.info(f"Processing athlete details item")
-            athleteDetails_query = self.dbpool.runInteraction(self._athlete_details_insert, item)
-            athleteDetails_query.addErrback(self._handle_error, item)
-            athleteDetails_query.addCallback(self._success, item)
 
         elif isinstance(item, RosterItem):
             success_logger.info(f"Processing roster item")
@@ -367,11 +366,11 @@ class MySQLStorePipeline(object):
         last_updated = datetime.datetime.now()
         args = (
             item["venue_id"],
-            item["name"],
-            item["city"],
-            item["state"],
-            item["capacity"],
-            item["indoor"],
+            item["venue_name"],
+            item["venue_city"],
+            item["venue_state"],
+            item["venue_capacity"],
+            item["venue_indoor"],
             item["venue_ref"],
             last_updated,
         )
@@ -388,6 +387,7 @@ class MySQLStorePipeline(object):
             item["birthplace"],
             item["athlete_ref"],
             last_updated,
+            item["headshot"],
         )
 
         tx.execute(sql, args)
@@ -396,7 +396,7 @@ class MySQLStorePipeline(object):
         sql = db.ATHLETE_DETAILS_UPSERT_QUERY
         last_updated = datetime.datetime.now()
         args = (
-            item["athlete_id"],
+            item["id"],
             item["season"],
             item["team_id"],
             item["jersey_number"],
@@ -431,6 +431,7 @@ class MySQLStorePipeline(object):
             item["starter"],
             item["ejected"],
             last_updated,
+            item["athlete_ref"]
         )
         tx.execute(sql, args)
 
@@ -642,12 +643,10 @@ class MySQLStorePipeline(object):
             self.foreign_key_logger.info(f"Foreign key constraint error: {exception} item: {item}")
             # MySQL error code for foreign key violation is typically 1451 or 1452
             if exception.args[0] in (1451, 1452) and isinstance(item, EventItem):
-                self.foreign_key_logger.info(f"calling event foreign key handler method  {item['team_id']}")
                 self._event_item_foriegn_key_handler(exception, item)
 
-            elif exception.args[0] in (1451, 1452) and isinstance(item, AthleteDetailsItem):
-                self.foreign_key_logger.info(f"calling athlete details foreign key handler method  {item['team_id']}")
-                self._athlete_details_foriegn_key_handler(exception, item)
+            elif exception.args[0] in (1451, 1452) and isinstance(item, AthleteItem):
+                print("FOREIGN KEY ERROR YOOOOOOOOOOOOOOOOOOO: error is : "+ str(exception.args[0]))
 
             elif exception.args[0] in (1451, 1452) and isinstance(item, RosterItem):
                 self.foreign_key_logger.info(f"calling roster foreign key handler method  {item['athlete_id']}")
@@ -669,18 +668,15 @@ class MySQLStorePipeline(object):
         try:
             college_query = self.dbpool.runInteraction(self._college_insert, college_item)
 
-            college_query.addCallback(self._on_college_insert_success, team_item, event_item)
+            college_query.addCallback(self._handle_missing_team, team_item, event_item)
             college_query.addErrback(self._handle_error, team_item)
         except Exception as e:
             self.error_logger.error(f"Error processing item: {e} item: {team_item}")
             self.foreign_key_logger.info(f"Error processing item: {e} item: {team_item}")
 
-    def _on_college_insert_success(self, _result, team_item, event_item):
-        self.success_logger.info(f"college successfully processed: {team_item} ")
-        self.foreign_key_logger.info(f"college successfully processed: {team_item}")
 
-    def _handle_missing_team(self, team_item, event_item):
-        self._handle_missing_team(team_item, event_item)
+
+    def _handle_missing_team(self, result, team_item, event_item):
         try:
             team_query = self.dbpool.runInteraction(self._team_insert, team_item)
             team_query.addCallback(self._on_team_insert_success, team_item, event_item)
@@ -703,51 +699,16 @@ class MySQLStorePipeline(object):
     def _on_event_insert_success(self, result, event_item):
         self.success_logger.info(f"Event successfully processed after adding missing team: {event_item} ")
         self.foreign_key_logger.info(f"Event successfully processed after adding missing team: {event_item} ")
+        print(f"Event successfully processed after adding missing team: {event_item} ")
 
-    def _handle_missing_athlete_team(self, item):
-        is_team = db.check_if_team_exists(item["team_id"], item["season"])
-        
-        if is_team == True:
-            self.foreign_key_logger.info(
-                f"Team exists: {item['team_id']} "
-            )
-            try:
-                athlete_details_query = self.dbpool.runInteraction(self._athlete_details_insert, item)
-                athlete_details_query.addCallback(self._on_athlete_details_insert_success, item)
-                athlete_details_query.addErrback(self._handle_error, item)
-            except Exception as e:
-                self.error_logger.error(f"Error processing item: {e} item: {item}")
-                self.foreign_key_logger.info(f"Error processing item: {e} item: {item}")
-        else:
-        
-            sql = """
-                    INSERT INTO teams (espn_id, location, name, season)
-                    SELECT espn_id, location, name, %s
-                    FROM colleges
-                    WHERE espn_id = %s;
-                """
-            try:
-                ath_team_query = self.dbpool.runInteraction(self._athlete_team_insert, item, sql)
-                ath_team_query.addCallback(self._on_athlete_team_insert_success, item)
-                ath_team_query.addErrback(self._handle_error, item)
-            except Exception as e:
-                self.error_logger.error(f"Error processing item: {e} item: {item}")
-                self.foreign_key_logger.info(f"Error processing item: {e} item: {item}")
-
-    def _on_athlete_team_insert_success(self, result, item):
-        self.success_logger.info(f"Missing team successfully processed ")
-        self.foreign_key_logger.info(f"Team successfully processed after adding missing team: {item} ")
         try:
-            athlete_details_query = self.dbpool.runInteraction(self._athlete_details_insert, item)
-            athlete_details_query.addCallback(self._on_athlete_details_insert_success, item)
-            athlete_details_query.addErrback(self._handle_error, item)
+            event_query = self.dbpool.runInteraction(self._event_details_insert, event_item)
+            event_query.addErrback(self._handle_error, event_item)
+            event_query.addCallback(self._success, event_item)
         except Exception as e:
-            self.error_logger.error(f"Error processing item: {e} item: {item}")
-            self.foreign_key_logger.info(f"Error processing item: {e} item: {item}")
+            self.error_logger.error(f"Error processing item: {e} item: {event_item}")
+            self.foreign_key_logger.info(f"Error processing item: {e} item: {event_item}")
 
-    def _on_athlete_details_insert_success(self, result, item):
-        self.success_logger.info(f"Athlete details successfully processed after adding missing team: {item} ")
-        self.foreign_key_logger.info(f"Athlete details successfully processed after adding missing team: {item} ")
 
     def _event_item_foriegn_key_handler(self, exception, item):
         if "away_team" in str(exception):
@@ -762,6 +723,10 @@ class MySQLStorePipeline(object):
             team_item["team_abbr"] = team_abbrs[0]
             team_item["season"] = item["season"]
             team_item["team_events_ref"] = None
+            team_item["conference_ref"] = None
+            team_item["record_ref"]= None 
+            team_item["ats_ref"] = None
+            team_item["ranks_ref"] = None
         elif "home_team" in str(exception):
             teams = item["name"].split(" at ")
             team_abbrs = item["shortname"].split(" @ ")
@@ -774,16 +739,13 @@ class MySQLStorePipeline(object):
             team_item["team_abbr"] = team_abbrs[1]
             team_item["season"] = item["season"]
             team_item["team_events_ref"] = None
+            team_item["conference_ref"] = None
+            team_item["record_ref"]= None 
+            team_item["ats_ref"] = None
+            team_item["ranks_ref"] = None
 
         self._handle_missing_college(team_item, item)
 
-    def _athlete_details_foriegn_key_handler(self, exception, item):
-        if "team_id" in str(exception):
-            self.foreign_key_logger.info(f"Handling missing team.... "+ str(item["athlete_id"]+ ":  with id: "+ str(item["team_id"]) + " and season: " + str(item["season"])))
-            self._handle_missing_athlete_team(item)
-
-        else:
-            raise DropItem(f"Error processing item: {exception} item: {item}")
 
     def _roster_foreign_key_handler(self, exception, item):
         if "athlete_id" in str(exception):
@@ -812,6 +774,7 @@ class MySQLStorePipeline(object):
         except Exception as e:
             self.foreign_key_logger.error(f"Error processing item: {e} item: {item}")
             self.foreign_key_logger.error(f"Error processing item: {e} item: {item}")
+    
     def _handle_missing_athlete(self, item):
         try:
             athlete_item = {}
@@ -881,3 +844,38 @@ class MySQLStorePipeline(object):
         except Exception as e:
             self.error_logger.error(f"Error processing item: {e} item: {item}")
             self.foreign_key_logger.info(f"Error processing item: {e} item: {item}")
+
+
+    def _athlete_success(self, result, item):
+        self.success_logger.info(f"Athlete successfully processed: {item} ")
+        self.success_logger.info(f"Processing corresponding athlete details")
+        try:
+            athlete_details_query = self.dbpool.runInteraction(self._athlete_details_insert, item)
+            athlete_details_query.addCallback(self._success, item)
+            athlete_details_query.addErrback(self._handle_error, item)
+        except Exception as e:
+            self.error_logger.error(f"Error processing item: {e} item: {item}")
+            self.foreign_key_logger.info(f"Error processing item: {e} item: {item}")
+
+    def _venue_success(self, result, item):
+        self.success_logger.info(f"venue successfully processed : {item}")
+        self.success_logger.info("processing corressponding event")
+        try:
+            event_query = self.dbpool.runInteraction(self._event_insert, item)
+            event_query.addCallback(self._event_success, item)
+            event_query.addErrback(self._handle_error, item)
+        except Exception as e:
+            self.error_logger.error(f"Error processing item {e} item : {item}")
+            self.foreign_key_logger.info(f"Error processing item: {e} item: {item}")
+    
+    def _event_success(self, result, item):
+        self.success_logger.info(f"event successfully processed : {item}")
+        self.success_logger.info("processing corressponding event details")
+        try:
+            event_query = self.dbpool.runInteraction(self._event_details_insert, item)
+            event_query.addCallback(self._success, item)
+            event_query.addErrback(self._handle_error, item)
+        except Exception as e:
+            self.error_logger.error(f"Error processing item {e} item : {item}")
+            self.foreign_key_logger.info(f"Error processing item: {e} item: {item}")
+        

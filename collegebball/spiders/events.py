@@ -4,7 +4,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 
-from collegebball.items import EventDetailsItem, EventItem, VenueItem
+from collegebball.items import EventItem 
 
 
 class EventsSpider(scrapy.Spider):
@@ -56,44 +56,48 @@ class EventsSpider(scrapy.Spider):
         event_item["event_time"] = eastern_time_only
 
         event = data["competitions"][0]
-
-        event_item["venue_id"] = event["venue"]["id"]
         
-        event_details_item = EventDetailsItem()
+        
 
-        event_details_item["event_id"] = event_item["event_id"]
-
-        event_details_item["neutral_site"] = event["neutralSite"]
-        event_details_item["conference_game"] = event["conferenceCompetition"]
-        event_details_item["division_game"] = event["divisionCompetition"]
-        event_details_item["event_ref"] = event["$ref"]
+        event_item["neutral_site"] = event["neutralSite"]
+        event_item["conference_game"] = event["conferenceCompetition"]
+        event_item["division_game"] = event["divisionCompetition"]
+        event_item["event_ref"] = event["$ref"]
 
         if "details" in event:
-            event_details_item["event_details_ref"] = event["details"]["$ref"]
+            event_item["event_details_ref"] = event["details"]["$ref"]
         else:
-            event_details_item["event_details_ref"] = None
+            event_item["event_details_ref"] = None
 
         if "odds" in event:
-            event_details_item["odds_ref"] = event["odds"]["$ref"]
+            event_item["odds_ref"] = event["odds"]["$ref"]
         else:
-            event_details_item["odds_ref"] = None
+            event_item["odds_ref"] = None
 
         if "status" in event:
-            event_details_item["status_ref"] = event["status"]["$ref"]
+            event_item["status_ref"] = event["status"]["$ref"]
         else:
-            event_details_item["status_ref"] = None
+            event_item["status_ref"] = None
 
         if "venue" in event:
-            venue_item = VenueItem()
             venue = event["venue"]
-            venue_item["venue_id"] = venue["id"]
-            venue_item["name"] = venue["fullName"]
-            venue_item["city"] = venue["address"]["city"]
-            venue_item["state"] = venue["address"]["state"]
-            venue_item["capacity"] = venue["capacity"]
-            venue_item["indoor"] = venue["indoor"]
-            venue_item["venue_ref"] = venue["$ref"]
-            yield venue_item
+            event_item["venue_id"] = venue["id"]
+            event_item["venue_name"] = venue["fullName"]
+            event_item["venue_city"] = venue["address"]["city"]
+            event_item["venue_state"] = venue["address"]["state"]
+            event_item["venue_capacity"] = venue["capacity"]
+            event_item["venue_indoor"] = venue["indoor"]
+            event_item["venue_ref"] = venue["$ref"]
+        else:
+            event_item["venue_id"] = None
+            event_item["venue_name"] = None
+            event_item["venue_city"] = None
+            event_item["venue_state"] = None
+            event_item["venue_capacity"] = None
+            event_item["venue_indoor"] = None
+            event_item["venue_ref"] = None
+
+            
 
         # get the teams
         home_team = event["competitors"][0]
@@ -113,62 +117,61 @@ class EventsSpider(scrapy.Spider):
             away_score_link = None
 
         if "curatedRank" in home_team:
-            event_details_item["home_team_rank"] = home_team["curatedRank"]["current"]
+            event_item["home_team_rank"] = home_team["curatedRank"]["current"]
         else:
-            event_details_item["home_team_rank"] = None
+            event_item["home_team_rank"] = None
 
         if "curatedRank" in away_team:
-            event_details_item["away_team_rank"] = away_team["curatedRank"]["current"]
+            event_item["away_team_rank"] = away_team["curatedRank"]["current"]
         else:
-            event_details_item["away_team_rank"] = None
+            event_item["away_team_rank"] = None
 
         if "statistics" in home_team:
-            event_details_item["home_team_stats_ref"] = home_team["statistics"]["$ref"]
+            event_item["home_team_stats_ref"] = home_team["statistics"]["$ref"]
         else:
-            event_details_item["home_team_stats_ref"] = None
+            event_item["home_team_stats_ref"] = None
 
         if "statistics" in away_team:
-            event_details_item["away_team_stats_ref"] = away_team["statistics"]["$ref"]
+            event_item["away_team_stats_ref"] = away_team["statistics"]["$ref"]
         else:
-            event_details_item["away_team_stats_ref"] = None
+            event_item["away_team_stats_ref"] = None
 
         if "roster" in home_team:
-            event_details_item["home_team_roster_ref"] = home_team["roster"]["$ref"]
+            event_item["home_team_roster_ref"] = home_team["roster"]["$ref"]
         else:
-            event_details_item["home_team_roster_ref"] = None
+            event_item["home_team_roster_ref"] = None
 
         if "roster" in away_team:
-            event_details_item["away_team_roster_ref"] = away_team["roster"]["$ref"]
+            event_item["away_team_roster_ref"] = away_team["roster"]["$ref"]
         else:
-            event_details_item["away_team_roster_ref"] = None
+            event_item["away_team_roster_ref"] = None
 
         if "winnner" in home_team:
-            event_details_item["home_team_win"] = home_team["winner"]
+            event_item["home_team_win"] = home_team["winner"]
         else:
-            event_details_item["home_team_win"] = None
+            event_item["home_team_win"] = None
         
         if "winner" in away_team:
-            event_details_item["away_team_win"] = away_team["winner"]
+            event_item["away_team_win"] = away_team["winner"]
         else:
-            event_details_item["away_team_win"] = None
+            event_item["away_team_win"] = None
 
             
         if "record" in home_team:
-            event_details_item["home_team_record_ref"] = home_team["record"]["$ref"]
+            event_item["home_team_record_ref"] = home_team["record"]["$ref"]
         else:
-            event_details_item["home_team_record_ref"] = None
+            event_item["home_team_record_ref"] = None
 
         if "record" in away_team:
-            event_details_item["away_team_record_ref"] = away_team["record"]["$ref"]
+            event_item["away_team_record_ref"] = away_team["record"]["$ref"]
         else:
-            event_details_item["away_team_record_ref"] = None
+            event_item["away_team_record_ref"] = None
 
-        if event_details_item["status_ref"] is not None:
+        if event_item["status_ref"] is not None:
             yield scrapy.Request(
-                url=event_details_item["status_ref"],
+                url=event_item["status_ref"],
                 callback=self.parse_status,
                 meta={
-                    "event_details_item": event_details_item,
                     "event_item": event_item,
                     "home_score_link": home_score_link,
                     "away_score_link": away_score_link,
@@ -181,22 +184,20 @@ class EventsSpider(scrapy.Spider):
                 callback=self.parse_score,
                 meta={
                     "event_item": event_item,
-                    "event_details_item": event_details_item,
                     "team": "home",
                     "away_score_link": away_score_link,
                 },
             )
         else:
             yield event_item
-            yield event_details_item
+        
 
     def parse_status(self, response):
         data = json.loads(response.body)
-        event_details_item = response.meta["event_details_item"]
         event_item = response.meta["event_item"]
         home_score_link = response.meta["home_score_link"]
         away_score_link = response.meta["away_score_link"]
-        event_details_item["status"] = data["type"]["name"]
+        event_item["status"] = data["type"]["name"]
 
         if home_score_link is not None and away_score_link is not None:
             yield scrapy.Request(
@@ -204,19 +205,17 @@ class EventsSpider(scrapy.Spider):
                 callback=self.parse_score,
                 meta={
                     "event_item": event_item,
-                    "event_details_item": event_details_item,
                     "team": "home",
                     "away_score_link": away_score_link,
                 },
             )
         else:
             yield event_item
-            yield event_details_item
+        
 
     def parse_score(self, response):
         data = json.loads(response.body)
         team = response.meta["team"]
-        event_details_item = response.meta["event_details_item"]
         event_item = response.meta["event_item"]
         
         if team == "home":
@@ -224,9 +223,9 @@ class EventsSpider(scrapy.Spider):
             yield scrapy.Request(
                 url=response.meta["away_score_link"],
                 callback=self.parse_score,
-                meta={"event_item": event_item, "team": "away", "event_details_item": event_details_item},
+                meta={"event_item": event_item, "team": "away"}
             )
         else:
             event_item["away_team_score"] = data["value"]
             yield event_item
-            yield event_details_item
+

@@ -198,15 +198,8 @@ VENUE_UPSERT_QUERY = """
 
 
 ATHLETE_UPSERT_QUERY = """
-        INSERT INTO athletes (id, first_name, last_name, full_name, birthplace, athlete_ref, last_updated)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        ON DUPLICATE KEY UPDATE
-                                first_name = VALUES(first_name),
-                                last_name = VALUES(last_name),
-                                full_name = VALUES(full_name),
-                                birthplace = VALUES(birthplace),
-                                athlete_ref = VALUES(athlete_ref),
-                                last_updated = VALUES(last_updated);
+        INSERT IGNORE INTO athletes (id, first_name, last_name, full_name, birthplace, athlete_ref, last_updated, headshot)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
         """
 
 ATHLETE_DETAILS_UPSERT_QUERY = """
@@ -226,14 +219,15 @@ ATHLETE_DETAILS_UPSERT_QUERY = """
 
 """
 ROSTER_UPSERT_QUERY = """
-        INSERT INTO event_rosters (team_id, athlete_id, season, event_id, did_not_play, stats_ref, starter, ejected, last_updated)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO event_rosters (team_id, athlete_id, season, event_id, did_not_play, stats_ref, starter, ejected, last_updated, athlete_ref)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE
                                 did_not_play = VALUES(did_not_play),
                                 stats_ref = VALUES(stats_ref),
                                 starter = VALUES(starter),
                                 ejected = VALUES(ejected),
-                                last_updated = VALUES(last_updated);
+                                last_updated = VALUES(last_updated),
+                                athlete_ref = VALUES(athlete_ref);
 """
 
 
@@ -653,17 +647,13 @@ def get_athlete_landing_pages(start, end):
     cursor = conn.cursor()
     results_list = []
     try:
-        cursor.execute(
-            "SELECT season, athletes_ref FROM season_details WHERE season BETWEEN %s AND %s",
-            (start, end),
-        )
+        cursor.execute("SELECT athletes_ref FROM season_details WHERE season BETWEEN %s AND %s",(start, end),)
         results = cursor.fetchall()
         # make results a list of the links
         for result in results:
             results_list.append(
                 {
-                    "season": result[0],
-                    "athletes_ref": result[1],
+                    "athletes_ref": result[0],
                 }
             )
         return results_list
@@ -680,11 +670,8 @@ def get_event_rosters(start, end):
     cursor = conn.cursor()
     results_list = []
     try:
-        cursor.execute(
-            """SELECT a.home_team_college_id, a.away_team_college_id, b.home_team_roster_ref, b.away_team_roster_ref, a.season, a.event_id FROM events a LEFT JOIN event_details b on a.event_id = b.event_id
-                WHERE (b.home_team_roster_ref is not null and b.away_team_roster_ref is not NULL) and a.season BETWEEN %s AND %s""",
-            (start, end),
-        )
+        cursor.execute("""SELECT a.home_team_college_id, a.away_team_college_id, b.home_team_roster_ref, b.away_team_roster_ref, a.season, a.event_id FROM events a LEFT JOIN event_details b on a.event_id = b.event_id
+                WHERE a.season BETWEEN %s AND %s""",(start, end),)
         results = cursor.fetchall()
         # make results a list of dicts
         for result in results:
@@ -712,10 +699,8 @@ def get_player_stats_ref(start, end):
     cursor = conn.cursor()
     results_list = []
     try:
-        cursor.execute(
-            """SELECT team_id, athlete_id, event_id, season, stats_ref FROM event_rosters where did_not_play = 0 and season BETWEEN %s and %s""",
-            (start, end),
-        )
+        cursor.execute("""SELECT team_id, athlete_id, event_id, season, stats_ref FROM event_rosters where did_not_play = 0 and season BETWEEN %s and %s""",
+            (start, end),)
         results = cursor.fetchall()
         # make results a list of dicts
         for result in results:
@@ -742,11 +727,8 @@ def get_event_odds(start, end):
     cursor = conn.cursor()
     results_list = []
     try:
-        cursor.execute(
-            """SELECT a.event_id, b.odds_ref, a.home_team_college_id, a.away_team_college_id, a.season FROM events a LEFT JOIN event_details b on a.event_id = b.event_id
-                WHERE b.odds_ref is not null and a.date BETWEEN %s AND %s""",
-            (start, end),
-        )
+        cursor.execute("""SELECT a.event_id, b.odds_ref, a.home_team_college_id, a.away_team_college_id, a.season FROM events a LEFT JOIN event_details b on a.event_id = b.event_id
+                WHERE b.odds_ref is not null and a.date BETWEEN %s AND %s""",(start, end),)
         results = cursor.fetchall()
         # make results a list of dicts
         for result in results:

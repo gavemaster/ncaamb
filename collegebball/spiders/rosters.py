@@ -9,22 +9,8 @@ class RostersSpider(scrapy.Spider):
 
     def start_requests(self):
         for url in self.start_urls:
-            if url["home_team_roster_url"] is None:
+            if url["home_team_roster_url"] is not None:
             
-                yield scrapy.Request(
-                    url=url["away_team_roster_url"],
-                    callback=self.parse_roster,
-                    meta={
-                        "season": url["season"],
-                        "home/away": "home",
-                        "home_team": url["home_team"],
-                        "away_team": url["away_team"],
-                        "event_id": url["event_id"],
-                        "home_team_roster_url": url["home_team_roster_url"],
-                        "away_team_roster_url": url["away_team_roster_url"],
-                    },
-                )
-            else:
                 yield scrapy.Request(
                     url=url["home_team_roster_url"],
                     callback=self.parse_roster,
@@ -38,6 +24,22 @@ class RostersSpider(scrapy.Spider):
                         "away_team_roster_url": url["away_team_roster_url"],
                     },
                 )
+            elif url["home_team_roster_url"] is None and url["away_team_roster_url"] is not None:
+                yield scrapy.Request(
+                    url=url["away_team_roster_url"],
+                    callback=self.parse_roster,
+                    meta={
+                        "season": url["season"],
+                        "home/away": "away",
+                        "home_team": url["home_team"],
+                        "away_team": url["away_team"],
+                        "event_id": url["event_id"],
+                        "home_team_roster_url": url["home_team_roster_url"],
+                        "away_team_roster_url": url["away_team_roster_url"],
+                    },
+                )
+            else:
+                continue
 
 
     def parse_roster(self, response):
@@ -50,7 +52,7 @@ class RostersSpider(scrapy.Spider):
         for player in roster:
             roster_item = RosterItem()
             if home_away == "home":
-             roster_item["team_id"] = response.meta['home_team']
+                roster_item["team_id"] = response.meta['home_team']
             else:
                 roster_item["team_id"] = response.meta['away_team']
             roster_item["season"] = season

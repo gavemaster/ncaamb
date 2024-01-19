@@ -35,4 +35,7 @@ process.crawl(AthletesSpider, start_urls=links)
 process.start()
 
 
-print("done")
+utils.stop_spinner()
+
+end = dt.datetime.now()
+print("Time to complete: {}".format(end - start))

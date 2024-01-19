@@ -345,27 +345,27 @@ EVENT_SPREAD_DETAILS_UPSERT_QUERY = """
 """
 
 EVENT_SPREAD_MOVEMENT_UPSERT_QUERY = """
-                        INSERT INTO spread_lines(event_id, provider_id, home_team_id, away_team_id, home_team_odds, away_team_odds,
-                                        line, timstamp)
+                        INSERT INTO spread_lines(event_id, provider_id, home_team_id, away_team_id, home_odds, away_odds,
+                                        line, timestamp)
                         VALUES (%s, %s, %s, %s, %s, %s, 
                                 %s, %s)
                         ON DUPLICATE KEY UPDATE
-                                home_team_odds = VALUES(home_team_odds),
-                                away_team_odds = VALUES(away_team_odds),
+                                home_odds = VALUES(home_odds),
+                                away_odds = VALUES(away_odds),
                                 line = VALUES(line);
 """
 
 EVENT_TOTAL_DETAILS_UPSERT_QUERY = """
-                        INSERT INTO total_odds_details(event_id, provider_id, home_team_id, away_team_id, total_line_low, total_line_high, 
-                                        total_line_open, total_line_current, total_line_previous, movement_ref, last_updated)
+                        INSERT INTO total_odds_details(event_id, provider_id, home_team_id, away_team_id, total_low, total_high, 
+                                        total_open, total_current, total_previous, movement_ref, last_updated)
                         VALUES (%s, %s, %s, %s, %s, %s,
                                 %s, %s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE
-                                total_line_low = VALUES(total_line_low),
-                                total_line_high = VALUES(total_line_high),
-                                total_line_open = VALUES(total_line_open),
-                                total_line_current = VALUES(total_line_current),
-                                total_line_previous = VALUES(total_line_previous),
+                                total_low = VALUES(total_low),
+                                total_high = VALUES(total_high),
+                                total_open = VALUES(total_open),
+                                total_current = VALUES(total_current),
+                                total_previous = VALUES(total_previous),
                                 movement_ref = VALUES(movement_ref),
                                 last_updated = VALUES(last_updated);
 """
@@ -403,12 +403,12 @@ EVENT_MONEYLINE_DETAILS_UPSERT_QUERY = """
 """
 
 EVENT_MONEYLINE_MOVEMENT_UPSERT_QUERY = """
-                        INSERT INTO moneyline_lines(event_id, provider_id, home_team_id, away_team_id, home_team_odds, away_team_odds, timestamp)
+                        INSERT INTO moneyline_lines(event_id, provider_id, home_team_id, away_team_id, home_odds, away_odds, timestamp)
                         VALUES (%s, %s, %s, %s, %s, %s,
                                 %s)
                         ON DUPLICATE KEY UPDATE
-                                home_team_odds = VALUES(home_team_odds),
-                                away_team_odds = VALUES(away_team_odds);
+                                home_odds = VALUES(home_odds),
+                                away_odds = VALUES(away_odds);
 """ 
 
 def get_db_pool():
@@ -728,7 +728,7 @@ def get_event_odds(start, end):
     results_list = []
     try:
         cursor.execute("""SELECT a.event_id, b.odds_ref, a.home_team_college_id, a.away_team_college_id, a.season FROM events a LEFT JOIN event_details b on a.event_id = b.event_id
-                WHERE b.odds_ref is not null and a.date BETWEEN %s AND %s""",(start, end),)
+                WHERE b.odds_ref is not null and a.season BETWEEN %s AND %s""",(start, end),)
         results = cursor.fetchall()
         # make results a list of dicts
         for result in results:
@@ -808,6 +808,75 @@ def get_team_ats_link_and_record_link_from_db(start, end):
                     "season": result[1],
                     "ats_link": result[2],
                     "record_link": result[3],
+                }
+            )
+        return results_list
+    except MySQLdb.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_event_odds_details_links():
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT event_id, provider_id, home_team_id, away_team_id, spread_details_ref, total_details_ref, moneyline_details_ref FROM event_odds WHERE spread_details_ref IS NOT NULL OR total_details_ref IS NOT NULL OR moneyline_details_ref IS NOT NULL"
+        )
+        results = cursor.fetchall()
+        # make results a list of dicts
+        results_list = []
+        for result in results:
+            results_list.append(
+                {
+                    "event_id": result[0],
+                    "provider_id": result[1],
+                    "home_team_id": result[2],
+                    "away_team_id": result[3],
+                    "spread_details_ref": result[4],
+                    "total_details_ref": result[5],
+                    "moneyline_details_ref": result[6],
+                    
+                }
+            )
+        return results_list
+    except MySQLdb.Error as e:
+        print(f"Database error: {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+
+def get_event_odds_lines_links():
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """SELECT s.event_id, s.provider_id, s.home_team_id, s.away_team_id, s.movement_ref as spread_movement_ref, 
+            m.movement_ref as moneyline_movement_ref, t.movement_ref as total_movement_ref FROM spread_odds_details s
+            LEFT JOIN moneyline_odds_details m on s.event_id = m.event_id and s.provider_id = m.provider_id
+            LEFT JOIN total_odds_details t on s.event_id = t.event_id and s.provider_id = t.provider_id
+            WHERE s.movement_ref IS NOT NULL OR m.movement_ref IS NOT NULL OR t.movement_ref IS NOT NULL"""
+        )
+        results = cursor.fetchall()
+        # make results a list of dicts
+        results_list = []
+        for result in results:
+            results_list.append(
+                {
+                    "event_id": result[0],
+                    "provider_id": result[1],
+                    "home_team_id": result[2],
+                    "away_team_id": result[3],
+                    "spread_movement_ref": result[4],
+                    "moneyline_movement_ref": result[5],
+                    "total_movement_ref": result[6],
+                    
                 }
             )
         return results_list

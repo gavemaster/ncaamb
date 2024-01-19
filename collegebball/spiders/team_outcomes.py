@@ -133,14 +133,9 @@ class TeamOutcomesSpider(scrapy.Spider):
                     team_outcomes_item["ats_home_underdog_losses"] = record["losses"]
                     team_outcomes_item["ats_home_underdog_pushes"] = record["pushes"]
                 else:
-                    print("ERROR: record_name not found")
-                    print(record_name)
-                    print(record)
-                    print("ERROR: record_name not found")
+                    continue
         else:
-            print("ERROR: No data found")
-            print(response.url)
-            print("ERROR: No data found")
+            pass
 
         yield scrapy.Request(url=response.meta["record_link"], callback=self.parse_record, meta={"team_outcomes_item": team_outcomes_item})
 

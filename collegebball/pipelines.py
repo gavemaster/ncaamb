@@ -77,7 +77,7 @@ class MySQLStorePipeline(object):
         self.success_logger = success_logger
         self.error_logger = error_logger
         self.foreign_key_logger = foreign_key_logger
-        
+        self.i = 0        
     def process_item(self, item, spider):
         success_logger.info(f"Processing items in pipeline")
         if isinstance(item, TeamItem):
@@ -101,7 +101,8 @@ class MySQLStorePipeline(object):
 
         elif isinstance(item, EventItem):
             success_logger.info(f"Processing event item")
-
+            print(f"\rCount: {self.i}", end="")
+            self.i += 1
             if item["venue_id"] is None:
                 event_query = self.dbpool.runInteraction(self._event_insert, item)
                 event_query.addErrback(self._handle_error, item)
@@ -130,12 +131,16 @@ class MySQLStorePipeline(object):
             athlete_query.addCallback(self._success, item)
 
         elif isinstance(item, RosterItem):
+            print(f"\rCount: {self.i}", end="")
+            self.i += 1
             success_logger.info(f"Processing roster item")
             roster_query = self.dbpool.runInteraction(self._roster_insert, item)
             roster_query.addErrback(self._handle_error, item)
             roster_query.addCallback(self._success, item)
 
         elif isinstance(item, PlayerStatsItem):
+            print(f"\rCount: {self.i}", end="")
+            self.i += 1
             success_logger.info(f"Processing player stats item")
             player_stats_query = self.dbpool.runInteraction(self._player_stats_insert, item)
             player_stats_query.addErrback(self._handle_error, item)
@@ -149,6 +154,8 @@ class MySQLStorePipeline(object):
 
         elif isinstance(item, EventOddsItem):
             success_logger.info(f"Processing event odds item")
+            print(f"\rCount: {self.i}", end="")
+            self.i += 1
             event_odds_query = self.dbpool.runInteraction(self._event_odds_insert, item)
             event_odds_query.addErrback(self._handle_error, item)
             event_odds_query.addCallback(self._success, item)
@@ -556,11 +563,11 @@ class MySQLStorePipeline(object):
             item["provider_id"],
             item["home_team_id"],
             item["away_team_id"],
-            item["total_line_low"],
-            item["total_line_high"],
-            item["total_line_open"],
-            item["total_line_current"],
-            item["total_line_prev"],
+            item["total_low"],
+            item["total_high"],
+            item["total_open"],
+            item["total_current"],
+            item["total_prev"],
             item["movement_ref"],
             last_updated
         )
@@ -596,8 +603,8 @@ class MySQLStorePipeline(object):
             item["provider_id"],
             item["home_team_id"],
             item["away_team_id"],
-            item["home_team_odds"],
-            item["away_team_odds"],
+            item["home_odds"],
+            item["away_odds"],
             item["line"],
             item["timestamp"]
         )
@@ -612,7 +619,7 @@ class MySQLStorePipeline(object):
             item["away_team_id"],
             item["over_odds"],
             item["under_odds"],
-            item["total_line"],
+            item["line"],
             item["timestamp"]
         )
         tx.execute(sql, args)
@@ -624,8 +631,8 @@ class MySQLStorePipeline(object):
             item["provider_id"],
             item["home_team_id"],
             item["away_team_id"],
-            item["home_team_odds"],
-            item["away_team_odds"],
+            item["home_odds"],
+            item["away_odds"],
             item["timestamp"]
         )
         tx.execute(sql, args)
@@ -699,7 +706,7 @@ class MySQLStorePipeline(object):
     def _on_event_insert_success(self, result, event_item):
         self.success_logger.info(f"Event successfully processed after adding missing team: {event_item} ")
         self.foreign_key_logger.info(f"Event successfully processed after adding missing team: {event_item} ")
-        print(f"Event successfully processed after adding missing team: {event_item} ")
+
 
         try:
             event_query = self.dbpool.runInteraction(self._event_details_insert, event_item)
@@ -784,9 +791,10 @@ class MySQLStorePipeline(object):
             athlete_item["name"] = None
             athlete_item["birthplace"] = None
             athlete_item["athlete_ref"] = item["athlete_ref"]
+            athlete_item["headshot"] = None
             team_query = self.dbpool.runInteraction(self._athlete_insert, athlete_item)
             team_query.addCallback(self._on_athlete_reinsert_success, item)
-            team_query.addErrback(self._handle_error)
+            team_query.addErrback(self._handle_error, item)
         except Exception as e:
             self.foreign_key_logger.error(f"Error processing item: {e} item: {item}")
             self.foreign_key_logger.error(f"Error processing item: {e} item: {item}")
@@ -879,3 +887,7 @@ class MySQLStorePipeline(object):
             self.error_logger.error(f"Error processing item {e} item : {item}")
             self.foreign_key_logger.info(f"Error processing item: {e} item: {item}")
         
+
+
+    def close_spider(self, spider):
+        self.dbpool.close()

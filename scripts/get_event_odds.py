@@ -14,27 +14,22 @@ start = dt.datetime.now()
 
 # take in a start date and end date as arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("start_date", type=str)
-parser.add_argument("end_date", type=str)
+parser.add_argument("start_year", type=int)
+parser.add_argument("end_year", type=int)
 args = parser.parse_args()
 
 
-if args.start_date > args.end_date:
-    raise ValueError("Start date must be less than or equal to end date")
-elif args.start_date is None or args.end_date is None:
-    raise ValueError("Start date and end date must be provided")
-
-valid_start = utils.check_date_format(args.start_date)
-valid_end = utils.check_date_format(args.end_date)
-
-if not valid_start or not valid_end:
-    raise ValueError("Start date and end date must be in YYYY-MM-DD format")
+if args.start_year > args.end_year:
+    raise ValueError("Start year must be less than or equal to end year")
+elif args.start_year < 2002:
+    raise ValueError("Start year must be greater than or equal to 2002")
+elif args.end_year > 2024:
+    raise ValueError("End year must be less than or equal to 2024")
+elif args.start_year is None or args.end_year is None:
+    raise ValueError("Start year and end year must be provided")
 
 
-
-
-
-event_odds = db.get_event_odds(args.start_date, args.end_date)
+event_odds = db.get_event_odds(args.start_year, args.end_year)
 
 
 

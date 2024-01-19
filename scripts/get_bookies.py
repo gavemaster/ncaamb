@@ -14,7 +14,6 @@ start = dt.datetime.now()
 bookie_links = utils.get_links_from_multiple_pages("http://sports.core.api.espn.com/v2/sports/basketball/leagues/mens-college-basketball/providers")
 
 
-print("bookie links:", bookie_links)
 
 print("starting spider")
 

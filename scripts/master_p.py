@@ -31,11 +31,16 @@ file_names = {"/home/hoff/dev/web-scraping/ncaamb/scripts/get_season_links.py":[
 
             }
 
+odd_scripts = {"/home/hoff/dev/web-scraping/ncaamb/scripts/get_event_odds.py":[str(args.start_year), str(args.end_year)],
+               "/home/hoff/dev/web-scraping/ncaamb/scripts/get_event_odds_details.py":[],
+               "/home/hoff/dev/web-scraping/ncaamb/scripts/get_event_odds_lines.py":[],}
+
+
 print("Starting master script for college basketball data scraper.... scrapping data for years between {} and {}".format(args.start_year, args.end_year))
 
 
 # Convert dictionary to a FIFO queue
-queue = deque(file_names.items())
+queue = deque(odd_scripts.items())
 
 # Process the queue
 while queue:

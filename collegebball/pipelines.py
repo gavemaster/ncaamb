@@ -719,15 +719,25 @@ class MySQLStorePipeline(object):
 
     def _event_item_foriegn_key_handler(self, exception, item):
         if "away_team" in str(exception):
-            teams = item["name"].split(" at ")
-            team_abbrs = item["shortname"].split(" @ ")
             team_item = {}
-            team_item["team_name"] = teams[0]
+            if item["name"] is not None:
+                teams = item["name"].split(" at ")
+                team_item["team_name"] = teams[0]
+            else:
+                teams = None
+
+            if item["shortName"] is not None:
+                team_abbrs = item["shortname"].split(" @ ")
+                team_item["team_abbr"] = team_abbrs[0]
+            else:
+                team_abbrs = None
+                team_item["team_abbr"] = None
+            
             self.foreign_key_logger.info(f"Handling missing team.... "+ str(team_item["team_name"])+ ":  with id: "+ str(item["away_team_college_id"]))
             team_item["college_espn_id"] = item["away_team_college_id"]
             team_item["team_location"] = None
             team_item["team_conference"] = None
-            team_item["team_abbr"] = team_abbrs[0]
+            
             team_item["season"] = item["season"]
             team_item["team_events_ref"] = None
             team_item["conference_ref"] = None
@@ -735,15 +745,24 @@ class MySQLStorePipeline(object):
             team_item["ats_ref"] = None
             team_item["ranks_ref"] = None
         elif "home_team" in str(exception):
-            teams = item["name"].split(" at ")
-            team_abbrs = item["shortname"].split(" @ ")
-            team_item = {}
-            team_item["team_name"] = teams[1]
+            team_item = {}                    
+            if item["name"] is not None:
+                teams = item["name"].split(" at ")
+                team_item["team_name"] = teams[1]
+            else:
+                teams = None
+
+            if item["shortName"] is not None:
+                team_abbrs = item["shortname"].split(" @ ")
+                team_item["team_abbr"] = team_abbrs[1]
+            else:
+                team_abbrs = None
+                team_item["team_abbr"] = None
+
             self.foreign_key_logger.info(f"Handling missing team.... "+ str(team_item["team_name"])+ ":  with id: "+ str(item["home_team_college_id"]))
             team_item["college_espn_id"] = item["home_team_college_id"]
             team_item["team_location"] = None
             team_item["team_conference"] = None
-            team_item["team_abbr"] = team_abbrs[1]
             team_item["season"] = item["season"]
             team_item["team_events_ref"] = None
             team_item["conference_ref"] = None

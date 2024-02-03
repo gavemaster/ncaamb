@@ -5,15 +5,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-COLLEGE_INSERT_QUERY = """INSERT IGNORE INTO colleges (espn_id, name, location)
+COLLEGE_INSERT_QUERY = """INSERT IGNORE INTO colleges (college_id, name, location)
                     VALUES (%s, %s, %s) """
 
-TEAM_UPSERT_QUERY = """INSERT INTO teams (name, espn_id, location, conference, team_abbr, season, events_link, conference_link, record_link, 
+TEAM_UPSERT_QUERY = """INSERT INTO teams (team_name, team_college_id, location, conference, team_abbr, team_season, events_link, conference_link, record_link, 
                                             ats_link, ranks_link)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
                             %s, %s)
                     ON DUPLICATE KEY UPDATE
-                    name = VALUES(name),
+                    name = VALUES(team_name),
                     location = VALUES(location),
                     conference = VALUES(conference),
                     team_abbr = VALUES(team_abbr),
@@ -25,7 +25,7 @@ TEAM_UPSERT_QUERY = """INSERT INTO teams (name, espn_id, location, conference, t
                     """
 
 TEAM_RESULTS_UPSERT_QUERY = """
-        INSERT INTO team_results (team_espn_id, season, ats_overall_wins, ats_overall_losses, ats_overall_pushes, ats_favorite_wins, ats_favorite_losses, ats_favorite_pushes, ats_underdog_wins, 
+        INSERT INTO team_results (results_college_id, results_season, ats_overall_wins, ats_overall_losses, ats_overall_pushes, ats_favorite_wins, ats_favorite_losses, ats_favorite_pushes, ats_underdog_wins, 
                                     ats_underdog_losses, ats_underdog_pushes, ats_away_wins, ats_away_losses, ats_away_pushes, ats_home_wins, ats_home_losses, ats_home_pushes, ats_away_favorite_wins, 
                                     ats_away_favorite_losses, ats_away_favorite_pushes, ats_away_underdog_wins, ats_away_underdog_losses, ats_away_underdog_pushes, ats_home_favorite_wins, ats_home_favorite_losses,
                                     ats_home_favorite_pushes, ats_home_underdog_wins, ats_home_underdog_losses, ats_home_underdog_pushes, wins, losses, overtime_wins, overtime_losses, point_differential, 
@@ -116,11 +116,11 @@ TEAM_RESULTS_UPSERT_QUERY = """
         """
 
 
-CONFERENCE_INSERT_QUERY = """INSERT IGNORE INTO conferences (id, name)
+CONFERENCE_INSERT_QUERY = """INSERT IGNORE INTO conferences (conference_id, conference_name)
                     VALUES (%s, %s) """
 
 
-CONFERENCE_DETAILS_UPSERT_QUERY = """INSERT INTO conference_details (id, name, short_name, standings_ref, teams_ref, season, last_updated)
+CONFERENCE_DETAILS_UPSERT_QUERY = """INSERT INTO conference_details (details_conference_id, name, short_name, standings_ref, teams_ref, season, last_updated)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
                     name = VALUES(name),
@@ -131,28 +131,28 @@ CONFERENCE_DETAILS_UPSERT_QUERY = """INSERT INTO conference_details (id, name, s
 
 
 EVENT_UPSERT_QUERY = """
-        INSERT INTO events (event_id, name, short_name, date, time, venue_id, home_team_college_id, away_team_college_id, 
-                                home_team_score, away_team_score, season, season_type, week, last_updated)
+        INSERT INTO events (event_id, event_name, event_short_name, event_date, event_time, event_venue_id, home_team_college_id, away_team_college_id, 
+                                home_team_score, away_team_score, event_season, event_season_type, event_week, last_updated)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 
                                 %s, %s, %s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE
-                                name = VALUES(name),
-                                short_name = VALUES(short_name),
-                                date = VALUES(date),
-                                time = VALUES(time),
-                                venue_id = VALUES(venue_id),
+                                name = VALUES(event_name),
+                                short_name = VALUES(event_short_name),
+                                date = VALUES(event_date),
+                                time = VALUES(event_time),
+                                venue_id = VALUES(event_venue_id),
                                 home_team_college_id = VALUES(home_team_college_id),
                                 away_team_college_id = VALUES(away_team_college_id),
                                 home_team_score = VALUES(home_team_score),
                                 away_team_score = VALUES(away_team_score),
-                                season = VALUES(season),
-                                season_type = VALUES(season_type),
-                                week = VALUES(week),
+                                season = VALUES(event_season),
+                                season_type = VALUES(event_season_type),
+                                week = VALUES(event_week),
                                 last_updated = VALUES(last_updated);
 """
 
 EVENT_DETAILS_UPSERT_QUERY = """
-        INSERT INTO event_details (event_id, odds_ref, neutral_site, division_game, conference_game, home_team_stats_ref, away_team_stats_ref, home_team_roster_ref, away_team_roster_ref,
+        INSERT INTO event_details (details_event_id, odds_ref, neutral_site, division_game, conference_game, home_team_stats_ref, away_team_stats_ref, home_team_roster_ref, away_team_roster_ref,
                                         event_details_ref, event_ref, status, home_team_rank, away_team_rank, home_team_win, away_team_win, home_team_record_ref, away_team_record_ref, last_updated)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
                                 %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -183,12 +183,12 @@ EVENT_DETAILS_UPSERT_QUERY = """
 
 
 VENUE_UPSERT_QUERY = """
-        INSERT INTO venues (id, name, city, state, capacity, indoor, venue_ref, last_updated)
+        INSERT INTO venues (venue_id, name, venue_city, venue_state, capacity, indoor, venue_ref, last_updated)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE
                                 name = VALUES(name),
-                                city = VALUES(city),
-                                state = VALUES(state),
+                                city = VALUES(venue_city),
+                                state = VALUES(venue_state),
                                 capacity = VALUES(capacity),
                                 indoor = VALUES(indoor),
                                 venue_ref = VALUES(venue_ref),
@@ -198,7 +198,7 @@ VENUE_UPSERT_QUERY = """
 
 
 ATHLETE_UPSERT_QUERY = """
-        INSERT IGNORE INTO athletes (id, first_name, last_name, full_name, birthplace, athlete_ref, last_updated, headshot)
+        INSERT IGNORE INTO athletes (athlete_id, first_name, last_name, full_name, birthplace, athlete_ref, last_updated, headshot)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
         """
 
@@ -219,7 +219,7 @@ ATHLETE_DETAILS_UPSERT_QUERY = """
 
 """
 ROSTER_UPSERT_QUERY = """
-        INSERT INTO event_rosters (team_id, athlete_id, season, event_id, did_not_play, stats_ref, starter, ejected, last_updated, athlete_ref)
+        INSERT INTO event_rosters (roster_team_id, roster_athlete_id, roster_season, roster_event_id, did_not_play, stats_ref, starter, ejected, last_updated, athlete_ref)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE
                                 did_not_play = VALUES(did_not_play),
@@ -232,7 +232,7 @@ ROSTER_UPSERT_QUERY = """
 
 
 PLAYER_STATS_UPSERT_QUERY = """
-    INSERT INTO player_stats (athlete_id, team_id, season, event_id, blks, dreb, stls, points_off_turnovers, flagrant_fouls, fouls, ejections, tech_fouls, tot_reb, minutes, fantasy_rating, plus_minus,
+    INSERT INTO player_stats (player_stats_athlete_id, player_stats_team_id, player_stats_season, player_stats_event_id, blks, dreb, stls, points_off_turnovers, flagrant_fouls, fouls, ejections, tech_fouls, tot_reb, minutes, fantasy_rating, plus_minus,
 													ast_to_ratio, stl_foul_ratio, blk_foul_ratio, stl_to_ratio, games_played, games_started, double_double, triple_double, ast, fga, fgm, fg_pct, fta, ftm, ft_pct, oreb,
 													pts, turnovers, 3fga, 3fgm, 3fg_pct, second_chance_pts, fast_break_pts, oreb_pct, 2fga, 2fgm, 2fg_pct, shooting_eff, scoring_eff, last_updated)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
@@ -287,12 +287,12 @@ PLAYER_STATS_UPSERT_QUERY = """
 """
 
 BOOKIE_UPSERT_QUERY = """
-                        INSERT INTO odd_providers(id, name, ref, priority)
+                        INSERT INTO odd_providers(provider_id, provider_name, provider_ref, provider_priority)
                         VALUES (%s, %s, %s, %s)
                         ON DUPLICATE KEY UPDATE
-                                name = VALUES(name),
-                                ref = VALUES(ref),
-                                priority = VALUES(priority);
+                                name = VALUES(provider_name),
+                                ref = VALUES(provider_ref),
+                                priority = VALUES(provider_priority);
 """
 
 
